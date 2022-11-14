@@ -3,6 +3,9 @@ version = 1.0
 [default.global.parameters]
 stack_name = "auto-fastlane-spaceauth-stack"
 
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+
 [default.build.parameters]
 cached = true
 parallel = true
