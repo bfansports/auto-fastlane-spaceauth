@@ -28,7 +28,7 @@ Resources:
       Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
       Region: "eu-west-1"
       TopicArn: "arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES"
-  AutoFastlaneSpaceauthFunction:
+  FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: auto-fastlane-spaceauth/
@@ -46,9 +46,9 @@ Resources:
           FASTLANE_PASSWORD: !Ref FastlanePassword
           SECRETS_MANAGER_SECRET_ID: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment"
       Events:
-        FastlaneSpaceauthSchedule:
+        SpaceauthSchedule:
           Type: Schedule
           Properties:
             Schedule: rate(15 minutes)
             Name: FastlaneSpaceauthSchedule
-            Description: Triggers the AutoFastlaneSpaceauthFunction lambda every 15 minutes
+            Description: Triggers the FastlaneSpaceauthFunction lambda every 15 minutes
