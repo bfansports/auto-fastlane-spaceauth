@@ -3,7 +3,6 @@ require "pty"
 require "expect"
 require "fastlane"
 require "spaceship"
-require "aws-sdk"
 require "aws-sdk-sqs"
 require "aws-sdk-secretsmanager"
 

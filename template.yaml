@@ -12,20 +12,22 @@ Parameters:
     NoEcho: true
 
 Resources:
-  SqsQueueForAppleSms:
+  SqsQueueForApple2FaSms:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: SqsQueueForAppleSms
-      DelaySeconds:
-      MaximumMessageSize:
-      MessageRetentionPeriod:
-      ReceiveMessageWaitTimeSeconds:
-      RedrivePolicy:
-      VisibilityTimeout:
-      FifoQueue:  true | false
-      Tags:
-        - Key: keyname
-          Value: value
+      QueueName: SqsQueueForApple2FaSms
+      DelaySeconds: 0
+      MessageRetentionPeriod: 120
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 0
+      SqsManagedSseEnabled: true
+  SnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
+      Region: "eu-west-1"
+      TopicArn: "arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES"
   AutoFastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -38,7 +40,7 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          SQS_QUEUE_URL: !Ref SqsQueueForAppleSms
+          SQS_QUEUE_URL: !Ref SqsQueueForApple2FaSms
           SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER: "+1 (787) 493-0633"
           FASTLANE_USER: "dev-ios@bfansports.com"
           FASTLANE_PASSWORD: !Ref FastlanePassword
