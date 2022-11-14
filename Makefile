@@ -16,7 +16,7 @@ sync:
 
 deploy: guard-AWS_REGION guard-AWS_ACCOUNT guard-FASTLANE_PASSWORD
 	@echo "Deploying..."
-	@sam deploy --resolve-s3 --region "${$AWS_REGION}" --role-arn "arn:aws:iam::${AWS_ACCOUNT}:role/CloudFormationDeployRole" --parameter-overrides FastlanePassword="${FASTLANE_PASSWORD}"
+	@sam deploy --resolve-s3 --region "${AWS_REGION}" --role-arn "arn:aws:iam::${AWS_ACCOUNT}:role/CloudFormationDeployRole" --parameter-overrides FastlanePassword="${FASTLANE_PASSWORD}"
 
 delete: guard-AWS_REGION
 	@echo "Deleting..."
