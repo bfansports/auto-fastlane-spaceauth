@@ -1,11 +1,19 @@
 require "aws-sdk"
 require "aws-sdk-sqs"
 require 'pry'
+require 'dotenv/load'
+require 'json'
 
+puts ENV["SQS_QUEUE_URL"]
+puts ENV["SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER"]
+puts ENV["FASTLANE_USER"]
+puts ENV["FASTLANE_PASSWORD"]
+puts ENV["SESSION_MANAGER_SECRET_ID"]
+
+exit(1)
 sqs = Aws::SQS::Client.new
 
 # Retrieve SMS containing 2FA code from the API
-# message_body = poller.poll.body
 messages = sqs.receive_message({
     queue_url: ENV["SQS_QUEUE_URL"],
     max_number_of_messages: 1,

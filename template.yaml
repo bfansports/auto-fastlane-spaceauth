@@ -5,17 +5,9 @@ Description: >
 
   Sample SAM Template for auto-fastlane-spaceauth
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
-    Tracing: Active
-  Api:
-    TracingEnabled: True
-
 Resources:
   AutoFastlaneSpaceauthFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: auto-fastlane-spaceauth/
       Handler: app.lambda_handler
@@ -23,7 +15,9 @@ Resources:
       Architectures:
         - arm64
       Events:
-        SNSEvent:
-          Type: SNS
+        FastlaneSpaceauthSchedule:
+          Type: Schedule
           Properties:
-            Topic: arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES
+            Schedule: rate(15 minutes)
+            Name: FastlaneSpaceauthSchedule
+            Description: Triggers the AutoFastlaneSpaceauthFunction lambda every 15 minutes

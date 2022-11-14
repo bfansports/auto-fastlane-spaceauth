@@ -1,0 +1,9 @@
+version = 1.0
+
+[default.global.parameters]
+stack_name = "auto-fastlane-spaceauth-stack"
+
+[default.build.parameters]
+cached = true
+parallel = true
+use_container = true # For consistency

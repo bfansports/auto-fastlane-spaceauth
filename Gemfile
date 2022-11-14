@@ -9,6 +9,7 @@ group :test do
   gem "mocha"
 end
 
-group :dev do
+group :development do
   gem "pry"
+  gem "dotenv"
 end
