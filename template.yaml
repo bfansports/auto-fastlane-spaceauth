@@ -5,15 +5,44 @@ Description: >
 
   Sample SAM Template for auto-fastlane-spaceauth
 
+Parameters:
+  FastlanePassword:
+    Type: String
+    Description: Apple ID password for Fastlane
+    NoEcho: true
+
 Resources:
+  SqsQueueForAppleSms:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SqsQueueForAppleSms
+      DelaySeconds:
+      MaximumMessageSize:
+      MessageRetentionPeriod:
+      ReceiveMessageWaitTimeSeconds:
+      RedrivePolicy:
+      VisibilityTimeout:
+      FifoQueue:  true | false
+      Tags:
+        - Key: keyname
+          Value: value
   AutoFastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: auto-fastlane-spaceauth/
       Handler: app.lambda_handler
       Runtime: ruby2.7
+      Timeout: 150
       Architectures:
-        - arm64
+        # - arm64 # TODO Uncomment this line to enable ARM64 support (slower to build with Docker)
+        - x86_64
+      Environment:
+        Variables:
+          SQS_QUEUE_URL: !Ref SqsQueueForAppleSms
+          SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER: "+1 (787) 493-0633"
+          FASTLANE_USER: "dev-ios@bfansports.com"
+          FASTLANE_PASSWORD: !Ref FastlanePassword
+          SECRETS_MANAGER_SECRET_ID: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment"
       Events:
         FastlaneSpaceauthSchedule:
           Type: Schedule

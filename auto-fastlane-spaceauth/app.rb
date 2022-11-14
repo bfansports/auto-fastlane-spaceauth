@@ -10,9 +10,9 @@ require "aws-sdk-secretsmanager"
 # In the environment we need:
 # SQS_QUEUE_URL - URL of the SQS queue to receive SMS messages from Apple
 # SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER - Phone number to receive 2FA code (the AWS Pinpoint phone number)
-# FASTLANE_USER - Apple ID
-# FASTLANE_PASSWORD - Apple ID password
-# SESSION_MANAGER_SECRET_ID - AWS Secrets Manager secret ID to store the FASTLANE_SESSION
+# FASTLANE_USER - Apple ID for Fastlane
+# FASTLANE_PASSWORD - Apple ID password for Fastlane
+# SECRETS_MANAGER_SECRET_ID - AWS Secrets Manager secret ID to store the FASTLANE_SESSION
 
 # Borrowed from https://blog.kishikawakatsumi.com/entry/2021/01/28/074522
 # Modified to work with AWS
@@ -82,7 +82,7 @@ end
 def get_previously_saved_session()
   client = Aws::SecretsManager::Client.new()
   resp = client.get_secret_value({
-    secret_id: ENV["SESSION_MANAGER_SECRET_ID"]
+    secret_id: ENV["SECRETS_MANAGER_SECRET_ID"]
   })
   secrets = JSON.parse(resp.secret_string)
   session = secrets['FASTLANE_SESSION']
@@ -94,7 +94,7 @@ end
 def save_session(fastlane_session = "")
   client = Aws::SecretsManager::Client.new()
   resp = client.get_secret_value({
-    secret_id: ENV["SESSION_MANAGER_SECRET_ID"]
+    secret_id: ENV["SECRETS_MANAGER_SECRET_ID"]
   })
   secrets = JSON.parse(resp.secret_string)
   secrets['FASTLANE_SESSION'] = fastlane_session
