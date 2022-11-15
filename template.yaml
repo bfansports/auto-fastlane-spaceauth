@@ -21,7 +21,7 @@ Parameters:
   SecretsManagerSecretId:
     Type: String
     Description: AWS Secrets Manager secret ID to store the FASTLANE_SESSION
-    Default: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment"
+    Default: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment-eotAA1"
 
 Resources:
   SqsQueueForApple2FaSms:
@@ -58,20 +58,19 @@ Resources:
           FASTLANE_PASSWORD: !Ref FastlanePassword
           SECRETS_MANAGER_SECRET_ID: !Ref SecretsManagerSecretId
       Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - sqs:ReceiveMessage
-                - sqs:DeleteMessage
-              Resource: !GetAtt SqsQueueForApple2FaSms.Arn
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-                - secretsmanager:PutSecretValue
-              Resource: !Ref SecretsManagerSecretId
+      - Statement:
+        - Sid: SqsMessageAccessPolicy
+          Effect: Allow
+          Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+          Resource: !GetAtt SqsQueueForApple2FaSms.Arn
+        - Sid: SecretsManagerSecretAccessPolicy
+          Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+            - secretsmanager:PutSecretValue
+          Resource: !Ref SecretsManagerSecretId
       Events:
         SpaceauthSchedule:
           Type: Schedule
@@ -79,3 +78,9 @@ Resources:
             Schedule: rate(15 minutes)
             Name: FastlaneSpaceauthSchedule
             Description: Triggers the FastlaneSpaceauthFunction lambda every 15 minutes
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: [ FastlaneSpaceauthFunction ]
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
+      RetentionInDays: 7
