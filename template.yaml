@@ -6,10 +6,22 @@ Description: >
   Sample SAM Template for auto-fastlane-spaceauth
 
 Parameters:
+  Spaceship2FaSmsDefaultPhoneNumber:
+    Type: String
+    Description: Phone number to receive 2FA code (the AWS Pinpoint phone number)
+    Default: "+1 (787) 493-0633"
+  FastlaneUser:
+    Type: String
+    Description: Apple ID for Fastlane
+    Default: "dev-ios@bfansports.com"
   FastlanePassword:
     Type: String
     Description: Apple ID password for Fastlane
     NoEcho: true
+  SecretsManagerSecretId:
+    Type: String
+    Description: AWS Secrets Manager secret ID to store the FASTLANE_SESSION
+    Default: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment"
 
 Resources:
   SqsQueueForApple2FaSms:
@@ -41,10 +53,25 @@ Resources:
       Environment:
         Variables:
           SQS_QUEUE_URL: !Ref SqsQueueForApple2FaSms
-          SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER: "+1 (787) 493-0633"
-          FASTLANE_USER: "dev-ios@bfansports.com"
+          SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER: !Ref Spaceship2FaSmsDefaultPhoneNumber
+          FASTLANE_USER: !Ref FastlaneUser
           FASTLANE_PASSWORD: !Ref FastlanePassword
-          SECRETS_MANAGER_SECRET_ID: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment"
+          SECRETS_MANAGER_SECRET_ID: !Ref SecretsManagerSecretId
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+              Resource: !GetAtt SqsQueueForApple2FaSms.Arn
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+                - secretsmanager:PutSecretValue
+              Resource: !Ref SecretsManagerSecretId
       Events:
         SpaceauthSchedule:
           Type: Schedule
