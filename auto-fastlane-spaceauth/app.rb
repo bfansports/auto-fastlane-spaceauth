@@ -51,13 +51,14 @@ module Spaceship
 end
 
 def fastlane_spaceauth(fastlane_session = "")
-  # Run the `fastlane spaceauth` command using PTY to respond to 2FA input
   # Set the previous session in case it's still valid
   unless fastlane_session.empty?
     ENV["FASTLANE_SESSION"] = fastlane_session
   end
   # Clean up the logs
   ENV["FASTLANE_DISABLE_COLORS"] = "1"
+  # Set the cookie directory to /tmp because the default home directory is not writable in Lambda
+  ENV["SPACESHIP_COOKIE_PATH"] = "/tmp"
   # Let's go !
   fastlane_session = Spaceship::SpaceauthRunner.new(copy_to_clipboard: false).run.session_string
   # Done
