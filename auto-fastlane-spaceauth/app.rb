@@ -15,7 +15,7 @@ require "aws-sdk-secretsmanager"
 module Spaceship
   class Client
     def ask_for_2fa_code(text)
-      puts "overrided"
+      puts "Retriveing the 2FA code from the SQS queue"
       # Retrieve SMS containing 2FA code from the API
       sqs = Aws::SQS::Client.new
       messages = sqs.receive_message({
@@ -24,6 +24,7 @@ module Spaceship
         wait_time_seconds: 20,
       })
       if messages.messages.empty?
+        puts "No messages in the queue"
         raise "NotFoundError"
       end
       message = messages.messages[0]
@@ -34,6 +35,7 @@ module Spaceship
       # Parse a 2FA code from the SMS body
       code = message_body[/\d{6}/]
       if code.nil? || code.empty?
+        puts "No 2FA code found in the message"
         raise "NotFoundError"
       end
 
