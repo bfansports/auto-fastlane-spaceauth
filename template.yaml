@@ -1,9 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  auto-fastlane-spaceauth
-
-  Sample SAM Template for auto-fastlane-spaceauth
+  This stack automatically runs `fastlane spaceauth` (including the 2FA SMS) and stores the session cookie in Secrets Manager for use in CI/CD.
 
 Parameters:
   Spaceship2FaSmsDefaultPhoneNumber:

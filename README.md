@@ -1,3 +1,26 @@
 # auto-fastlane-spaceauth
 
-This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
+This stack automatically runs `fastlane spaceauth` (including the 2FA SMS) and stores the session cookie in Secrets Manager for use in CI/CD.
+
+We then use the `FASTLANE_SESSION` in Fastlane scripts and in Bitrise.
+
+## Development and Testing Locally 🧪
+
+```bash
+make build
+make test
+```
+
+*Note: I suggest you switch the lambda CPU architecture in the [template.yaml](template.yaml) to `x86_64` during development. This speeds the builds 10x.*
+
+## Deploying 🚀
+
+```bash
+make deploy
+```
+
+## Deleting 🧨
+
+```bash
+make delete
+```
