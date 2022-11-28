@@ -14,7 +14,7 @@ require "aws-sdk-secretsmanager"
 # Overrides spaceship/lib/spaceship/two_step_or_factor_client.rb
 module Spaceship
   class Client
-    def ask_for_2fa_code
+    def ask_for_2fa_code(text)
       puts "overrided"
       # Retrieve SMS containing 2FA code from the API
       sqs = Aws::SQS::Client.new
