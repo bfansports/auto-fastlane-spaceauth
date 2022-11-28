@@ -1,13 +1,12 @@
-# auto-fastlane-spaceauth
+# Auto Fastlane Spaceauth
 
 This stack automatically runs `fastlane spaceauth` (including the 2FA SMS) and stores the session cookie in Secrets Manager for use in CI/CD.
 
 We then use the `FASTLANE_SESSION` in Fastlane scripts and in Bitrise.
 
-## Development and Testing Locally 🧪
+## Testing Locally 🧪
 
 ```bash
-make build
 make test
 ```
 

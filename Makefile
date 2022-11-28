@@ -6,13 +6,13 @@ GUARD:
 
 all: build
 
-test:
-	@echo "Testing..."
-	@sam local invoke --event test/event.json
-
 build:
 	@echo "Building..."
 	@sam build
+
+test: build
+	@echo "Testing..."
+	@sam local invoke --event test/event.json
 
 deploy: guard-AWS_REGION guard-AWS_ACCOUNT guard-FASTLANE_PASSWORD build
 	@echo "Deploying..."
