@@ -1,18 +1,18 @@
 guard-%: GUARD
 	@ if [ -z '${${*}}' ]; then echo 'Environment variable $* not set.' && exit 1; fi
 
-.PHONY: GUARD
+.PHONY: GUARD test
 GUARD:
 
 all: build
 
+test:
+	@echo "Testing..."
+	@sam local invoke --event test/event.json
+
 build:
 	@echo "Building..."
 	@sam build
-
-sync:
-	@echo "Syncing..."
-	@echo y | sam sync --watch
 
 deploy: guard-AWS_REGION guard-AWS_ACCOUNT guard-FASTLANE_PASSWORD build
 	@echo "Deploying..."

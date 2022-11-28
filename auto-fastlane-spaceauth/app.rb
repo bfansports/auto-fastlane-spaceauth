@@ -12,7 +12,7 @@ require "aws-sdk-secretsmanager"
 # SECRETS_MANAGER_SECRET_ID - AWS Secrets Manager secret ID to store the FASTLANE_SESSION
 
 # Overrides spaceship/lib/spaceship/two_step_or_factor_client.rb
-class 2FAInterceptorClient
+class TwoFAInterceptorClient
   def ask_for_2fa_code
     puts "overrided"
     # Retrieve SMS containing 2FA code from the API
@@ -57,7 +57,7 @@ def fastlane_spaceauth(fastlane_session = "")
   # Clean up the logs
   ENV["FASTLANE_DISABLE_COLORS"] = "1"
   # Dark Magic
-  Spaceship.Client.singleton_class.prepend(2FAInterceptorClient)
+  Spaceship.Client.singleton_class.prepend(TwoFAInterceptorClient)
   # Let's go !
   fastlane_session = Spaceship::SpaceauthRunner.new(copy_to_clipboard: false).run.session_string
   # Done
