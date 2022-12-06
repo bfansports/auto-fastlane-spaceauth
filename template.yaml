@@ -44,7 +44,6 @@ Resources:
     Properties:
       Protocol: sqs
       Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
-      Region: "eu-west-1"
       TopicArn: !Ref SnsTopicArn
   FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
