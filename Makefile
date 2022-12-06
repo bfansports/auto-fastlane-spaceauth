@@ -10,7 +10,7 @@ build:
 	@echo "Building..."
 	@sam build
 
-test: build guard-SQS_QUEUE_URL guard-SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER guard-FASTLANE_USER guard-FASTLANE_PASSWORD guard-SECRETS_MANAGER_SECRET_ID
+test: guard-SQS_QUEUE_URL guard-SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER guard-FASTLANE_USER guard-FASTLANE_PASSWORD guard-SECRETS_MANAGER_SECRET_ID build
 	@echo "Testing..."
 	@sam local invoke
 
