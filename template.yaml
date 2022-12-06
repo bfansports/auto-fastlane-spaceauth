@@ -136,3 +136,43 @@ Resources:
       Threshold: 1
       Unit: None
       TreatMissingData: notBreaching
+
+  # In case Apple blocks the phone number, we need to keep every SMS message.
+  # This lambda will log every SMS message received into CloudWatch Logs.
+  # That way, we can manually get the latest SMS code from CloudWatch Logs,
+  # and enter the last code received into the Apple website to unblock the number.
+  Fastlane2FaSmsLoggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Fastlane2FaSmsLogger
+      Description: This function logs every Fastlane 2FA SMS message received into CloudWatch Logs
+      InlineCode: |
+          def lambda_handler(event, context):
+              print(event)
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      Timeout: 3
+      MemorySize: 128 # Smallest possible
+      Architectures:
+        - arm64
+  # Log group that keeps the 2FA SMS history
+  LogGroupForFastlane2FaSmsLoggerFunction:
+    Type: AWS::Logs::LogGroup
+    DependsOn: Fastlane2FaSmsLoggerFunction
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Fastlane2FaSmsLoggerFunction}
+      RetentionInDays: 7
+  # Provide permission for SNS to invoke the logger Lambda function
+  SnsPermissionForFastlane2FaSmsLoggerFunction:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Fastlane2FaSmsLoggerFunction
+      Principal: sns.amazonaws.com
+  # SNS Subscription
+  SnsSubscriptionForFastlane2FaSmsLoggerFunction:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt Fastlane2FaSmsLoggerFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref SnsTopicArn
