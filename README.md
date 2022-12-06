@@ -23,3 +23,69 @@ make deploy
 ```bash
 make delete
 ```
+
+## Setup ⚙️
+
+This stack is created and used by [bFAN Sports](https://www.bfansports.com/). If you want to use this stack, you'll need to do a few things first.
+
+### 1. AWS Secrets Manager
+
+#### 1.1 Create a secret in Secrets Manager
+
+You will be storing the `FASTLANE_SESSION` in Secrets Manager. So create a secret from the AWS dashboard.
+
+Copy the ARN.
+
+*Notes: We chose to enable KMS encryption for the secret, so our template contains permissions to access the KMS key. Remove those permissions if you don't want to use KMS encryption.*
+
+#### 1.2 Modify the template
+
+In the [template.yaml](template.yaml), replace the `SecretsManagerSecretId` and `KmsKeyIdForSecretsManager` default parameter with your own value.
+
+### 2. AWS Pinpoint
+
+#### 2.1 Buy an AWS Pinpoint long code phone number with 2-way SMS capability
+
+You will be paying for every SMS received. You can find the cheapest phone number using [this script](https://gist.github.com/return-main/b1c833e6385dd73d9261388ff7976dd8).
+
+Whatever country you chose, make sure it has [Two-way SMS capability](https://docs.aws.amazon.com/pinpoint/latest/userguide/channels-sms-countries.html).
+
+The availability of phone numbers varies, so we used a phone number from Puerto Rico (PR).
+
+Copy the long code phone number.
+
+#### 2.2 Enable 2-way SMS for your phone number
+
+Go to the long code's settings and enable two-way SMS. Send the incoming SMS to a new SNS topic.
+
+Copy the SNS topic ARN.
+
+#### 2.3 Modify the template
+
+In the [template.yaml](template.yaml), replace the `Spaceship2FaSmsDefaultPhoneNumber` and `SnsTopicArn` default parameters with your own values.
+
+### 3. Apple Developer Account
+
+#### 3.1 Trusting the phone number
+
+Go to your [Apple account](https://appleid.apple.com/) and add the trusted phone number you chose in step 2.1.
+
+#### 3.2 Modify the template
+
+In the [template.yaml](template.yaml), replace the `FastlaneUser` default parameters with your own Apple email.
+
+#### 3.3 Export the Apple password
+
+We don't want to store the Apple password in the template. Instead, we'll export it as an environment variable.
+
+```bash
+export FASTLANE_PASSWORD="your_password"
+```
+
+### 4. Deploying
+
+Congratulations! You're ready to deploy.
+
+```bash
+make deploy
+```
