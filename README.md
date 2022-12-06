@@ -42,6 +42,17 @@ Copy the ARN.
 
 In the [template.yaml](template.yaml), replace the `SecretsManagerSecretId` and `KmsKeyIdForSecretsManager` default parameter with your own value.
 
+```yaml
+  SecretsManagerSecretId:
+    Type: String
+    Description: AWS Secrets Manager secret ID to store the FASTLANE_SESSION
+    Default: "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:SECRET_NAME-XXXXXXXX"
+  KmsKeyIdForSecretsManager:
+    Type: String
+    Description: AWS KMS key ID for Secrets Manager
+    Default: "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+```
+
 ### 2. AWS Pinpoint
 
 #### 2.1 Buy an AWS Pinpoint long code phone number with 2-way SMS capability
@@ -64,6 +75,17 @@ Copy the SNS topic ARN.
 
 In the [template.yaml](template.yaml), replace the `Spaceship2FaSmsDefaultPhoneNumber` and `SnsTopicArn` default parameters with your own values.
 
+```yaml
+  Spaceship2FaSmsDefaultPhoneNumber:
+    Type: String
+    Description: Phone number to receive 2FA code (the AWS Pinpoint phone number)
+    Default: "+1XXXXXXXXXX"
+  SnsTopicArn:
+    Type: String
+    Description: AWS SNS topic ARN that receives 2FA SMS
+    Default: "arn:aws:sns:REGION:ACCOUNT_ID:TOPIC_NAME"
+```
+
 ### 3. Apple Developer Account
 
 #### 3.1 Trusting the phone number
@@ -73,6 +95,13 @@ Go to your [Apple account](https://appleid.apple.com/) and add the trusted phone
 #### 3.2 Modify the template
 
 In the [template.yaml](template.yaml), replace the `FastlaneUser` default parameters with your own Apple email.
+
+```yaml
+  FastlaneUser:
+    Type: String
+    Description: Apple ID for Fastlane
+    Default: "APPLE_ACCOUNT@YOUR_WEBSITE.com"
+```
 
 #### 3.3 Export the Apple password
 
@@ -85,6 +114,8 @@ export FASTLANE_PASSWORD="your_password"
 ### 4. Deploying
 
 Congratulations! You're ready to deploy.
+
+[Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html#install-sam-cli-instructions) and run:
 
 ```bash
 make deploy
