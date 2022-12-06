@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  This stack automatically runs `fastlane spaceauth` (including the 2FA SMS) and stores the session cookie in Secrets Manager for use in CI/CD.
+
+Parameters:
+  Spaceship2FaSmsDefaultPhoneNumber:
+    Type: String
+    Description: Phone number to receive 2FA code (the AWS Pinpoint phone number)
+    Default: "+1 (787) 493-0633"
+  SnsTopicArn:
+    Type: String
+    Description: AWS SNS topic ARN that receives 2FA SMS
+    Default: "arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES"
+  FastlaneUser:
+    Type: String
+    Description: Apple ID for Fastlane
+    Default: "dev-ios@bfansports.com"
+  FastlanePassword:
+    Type: String
+    Description: Apple ID password for Fastlane
+    NoEcho: true
+  SecretsManagerSecretId:
+    Type: String
+    Description: AWS Secrets Manager secret ID to store the FASTLANE_SESSION
+    Default: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment-eotAA1"
+  KmsKeyIdForSecretsManager:
+    Type: String
+    Description: AWS KMS key ID for Secrets Manager
+    Default: "arn:aws:kms:eu-west-1:501431420968:key/64b87c32-49f8-48e2-864a-2da94059448c"
+
+Resources:
+  SqsQueueForApple2FaSms:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SqsQueueForApple2FaSms
+      DelaySeconds: 0
+      MessageRetentionPeriod: 120
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 0
+      SqsManagedSseEnabled: true
+  SnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
+      TopicArn: !Ref SnsTopicArn
+  FastlaneSpaceauthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: FastlaneSpaceauth
+      Description: This function runs Fastlane's spaceauth command to refresh the FASTLANE_SESSION in Secrets Manager
+      CodeUri: auto-fastlane-spaceauth/
+      Handler: app.lambda_handler
+      Runtime: ruby2.7
+      Timeout: 150
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          SQS_QUEUE_URL: !Ref SqsQueueForApple2FaSms
+          SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER: !Ref Spaceship2FaSmsDefaultPhoneNumber
+          FASTLANE_USER: !Ref FastlaneUser
+          FASTLANE_PASSWORD: !Ref FastlanePassword
+          SECRETS_MANAGER_SECRET_ID: !Ref SecretsManagerSecretId
+      Policies:
+      - Statement:
+        - Sid: SqsMessageAccessPolicy
+          Effect: Allow
+          Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+          Resource: !GetAtt SqsQueueForApple2FaSms.Arn
+      - Statement:
+        - Sid: SecretsManagerSecretAccessPolicy
+          Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+            - secretsmanager:PutSecretValue
+          Resource: !Ref SecretsManagerSecretId
+        - Sid: KmsAccessPolicy
+          Effect: Allow
+          Action:
+            - kms:Decrypt
+            - kms:GenerateDataKey
+          Resource: !Ref KmsKeyIdForSecretsManager
+      Events:
+        SpaceauthSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(15 minutes)
+            Name: FastlaneSpaceauthSchedule
+            Description: Triggers the FastlaneSpaceauthFunction lambda every 15 minutes
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: FastlaneSpaceauthFunction
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
+      RetentionInDays: 7
+  FastlaneSpaceauthRefreshingSessionFilter:
+    Type: AWS::Logs::MetricFilter
+    DependsOn: LogGroup
+    Properties:
+      # From https://github.com/fastlane/fastlane/blob/master/spaceship/lib/spaceship/client.rb#L442
+      FilterPattern: '"Session loaded from environment variable is not valid. Continuing with normal login."'
+      LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
+      MetricTransformations:
+        - MetricName: RefreshingSession
+          MetricNamespace: FastlaneSpaceauth
+          MetricValue: '1'
+  FastlaneTooManyVerificationCodesSentErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    DependsOn: LogGroup
+    Properties:
+      # From https://github.com/fastlane/fastlane/blob/master/spaceship/lib/spaceship/two_step_or_factor_client.rb#L29
+      FilterPattern: '"Too many verification codes have been sent. Enter the last code you received, use one of your devices, or try again later."'
+      LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
+      MetricTransformations:
+        - MetricName: FastlaneTooManyVerificationCodesSentError
+          MetricNamespace: FastlaneSpaceauth
+          MetricValue: '1'
+  FastlaneTooManyVerificationCodesSentErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: FastlaneTooManyVerificationCodesSentErrorFilter
+    Properties:
+      ActionsEnabled: true
+      AlarmActions: [!ImportValue 'EmailNotificationTopic']
+      AlarmDescription: Alarm triggered when the Pinpoint 2FA SMS limit is reached
+      AlarmName: FastlaneTooManyVerificationCodesSentErrorAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: FastlaneTooManyVerificationCodesSentError
+      Namespace: FastlaneSpaceauth
+      Period: 300
+      Statistic: Sum
+      Threshold: 1
+      Unit: None
+      TreatMissingData: notBreaching
