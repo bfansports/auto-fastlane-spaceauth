@@ -8,6 +8,10 @@ Parameters:
     Type: String
     Description: Phone number to receive 2FA code (the AWS Pinpoint phone number)
     Default: "+1 (787) 493-0633"
+  SnsTopicArn:
+    Type: String
+    Description: AWS SNS topic ARN that receives 2FA SMS
+    Default: "arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES"
   FastlaneUser:
     Type: String
     Description: Apple ID for Fastlane
@@ -20,6 +24,10 @@ Parameters:
     Type: String
     Description: AWS Secrets Manager secret ID to store the FASTLANE_SESSION
     Default: "arn:aws:secretsmanager:eu-west-1:501431420968:secret:IOSEnvironment-eotAA1"
+  KmsKeyIdForSecretsManager:
+    Type: String
+    Description: AWS KMS key ID for Secrets Manager
+    Default: "arn:aws:kms:eu-west-1:501431420968:key/64b87c32-49f8-48e2-864a-2da94059448c"
 
 Resources:
   SqsQueueForApple2FaSms:
@@ -37,7 +45,7 @@ Resources:
       Protocol: sqs
       Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
       Region: "eu-west-1"
-      TopicArn: "arn:aws:sns:eu-west-1:501431420968:APPLE_2FA_SMS_CODES"
+      TopicArn: !Ref SnsTopicArn
   FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -76,7 +84,7 @@ Resources:
           Action:
             - kms:Decrypt
             - kms:GenerateDataKey
-          Resource: "arn:aws:kms:eu-west-1:501431420968:key/64b87c32-49f8-48e2-864a-2da94059448c"
+          Resource: !Ref KmsKeyIdForSecretsManager
       Events:
         SpaceauthSchedule:
           Type: Schedule
