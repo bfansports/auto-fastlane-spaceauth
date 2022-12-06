@@ -10,9 +10,9 @@ build:
 	@echo "Building..."
 	@sam build
 
-test: build
+test: build guard-FASTLANE_PASSWORD guard-SQS_QUEUE_URL_FOR_APPLE_2FA_SMS
 	@echo "Testing..."
-	@sam local invoke --event test/event.json
+	@sam local invoke --parameter-overrides ParameterKey=FastlanePassword,ParameterValue="${FASTLANE_PASSWORD}" ParameterKey=SqsQueueForApple2FaSms,ParameterValue="${SQS_QUEUE_URL_FOR_APPLE_2FA_SMS}"
 
 deploy: guard-AWS_REGION guard-AWS_ACCOUNT guard-FASTLANE_PASSWORD build
 	@echo "Deploying..."
