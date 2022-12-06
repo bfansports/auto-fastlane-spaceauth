@@ -36,7 +36,7 @@ You will be storing the `FASTLANE_SESSION` in Secrets Manager. So create a secre
 
 Copy the ARN.
 
-*Notes: We chose to enable KMS encryption for the secret, so our template contains permissions to access the KMS key. Remove those permissions if you don't want to use KMS encryption.*
+*Note: We chose to enable KMS encryption for the secret, so our template contains permissions to access the KMS key. Remove those permissions if you don't want to use KMS encryption.*
 
 #### 1.2 Modify the template
 
