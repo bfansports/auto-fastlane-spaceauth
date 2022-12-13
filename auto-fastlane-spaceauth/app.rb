@@ -25,10 +25,10 @@ module Spaceship
       })
       if messages.messages.empty?
         puts "No messages in the queue"
-        raise "NotFoundError"
+        raise "NoMessagesInQueueError"
       end
       message = messages.messages[0]
-      message_body = JSON.parse(JSON.parse(message.body)["Message"])["messageBody"]
+      message_body = JSON.parse(message.body)["messageBody"]
 
       puts message_body
 
@@ -36,7 +36,7 @@ module Spaceship
       code = message_body[/\d{6}/]
       if code.nil? || code.empty?
         puts "No 2FA code found in the message"
-        raise "NotFoundError"
+        raise "No2FACodeFoundError"
       end
 
       puts code

@@ -30,6 +30,7 @@ Parameters:
     Default: "arn:aws:kms:eu-west-1:501431420968:key/64b87c32-49f8-48e2-864a-2da94059448c"
 
 Resources:
+  # Define the SQS queue
   SqsQueueForApple2FaSms:
     Type: AWS::SQS::Queue
     Properties:
@@ -39,12 +40,31 @@ Resources:
       ReceiveMessageWaitTimeSeconds: 0
       VisibilityTimeout: 0
       SqsManagedSseEnabled: true
+  # Policy allows SNS to publish to this SQS queue
+  SnsToSqsPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "Allow SNS publish to SQS"
+            Effect: Allow
+            Principal:
+              Service: "sns.amazonaws.com"
+            Resource: !GetAtt SqsQueueForApple2FaSms.Arn
+            Action: SQS:SendMessage
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref SnsTopicArn
+      Queues: [!Ref SqsQueueForApple2FaSms]
+  # Subscribes the SQS queue to the SNS topic
   SnsSubscription:
     Type: AWS::SNS::Subscription
     Properties:
       Protocol: sqs
       Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
       TopicArn: !Ref SnsTopicArn
+      RawMessageDelivery: true # Save some bytes
   FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -113,7 +133,7 @@ Resources:
     DependsOn: LogGroup
     Properties:
       # From https://github.com/fastlane/fastlane/blob/master/spaceship/lib/spaceship/two_step_or_factor_client.rb#L29
-      FilterPattern: '"Too many verification codes have been sent. Enter the last code you received, use one of your devices, or try again later."'
+      FilterPattern: '"Too many verification codes have been sent."'
       LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
       MetricTransformations:
         - MetricName: FastlaneTooManyVerificationCodesSentError
