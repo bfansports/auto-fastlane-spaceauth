@@ -28,6 +28,23 @@ Parameters:
     Type: String
     Description: AWS KMS key ID for Secrets Manager
     Default: "arn:aws:kms:eu-west-1:501431420968:key/64b87c32-49f8-48e2-864a-2da94059448c"
+  DevAccountId:
+    Type: String
+    Description: AWS account ID for the dev environment
+    Default: "441276146445"
+  QaAccountId:
+    Type: String
+    Description: AWS account ID for the QA environment
+    Default: "644562626802"
+  ProdAccountId:
+    Type: String
+    Description: AWS account ID for the prod environment
+    Default: "501431420968"
+
+Conditions:
+  IsNotDevAccount: !Not [!Equals [!Ref DevAccountId, !Ref AWS::AccountId]]
+  IsNotQaAccount: !Not [!Equals [!Ref QaAccountId, !Ref AWS::AccountId]]
+  IsNotProdAccount: !Not [!Equals [!Ref ProdAccountId, !Ref AWS::AccountId]]
 
 Resources:
   # Define the SQS queue
@@ -200,19 +217,22 @@ Resources:
   # That way we can force trigger a refresh of the FASTLANE_SESSION from our CI/CD pipeline
   FastlaneSpaceauthFunctionCrossAccountPermissionDev:
     Type: AWS::Lambda::Permission
+    Condition: IsNotDevAccount # No need to give cross-account permissions to the current account
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
-      Principal: 441276146445 # DEV
+      Principal: !Ref DevAccountId
   FastlaneSpaceauthFunctionCrossAccountPermissionQA:
     Type: AWS::Lambda::Permission
+    Condition: IsNotQaAccount # No need to give cross-account permissions to the current account
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
-      Principal: 644562626802 # QA
+      Principal: !Ref QaAccountId
   FastlaneSpaceauthFunctionCrossAccountPermissionProd:
     Type: AWS::Lambda::Permission
+    Condition: IsNotProdAccount # No need to give cross-account permissions to the current account
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
-      Principal: 501431420968 # PROD
+      Principal: !Ref ProdAccountId
