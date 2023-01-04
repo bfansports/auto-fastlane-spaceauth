@@ -196,3 +196,23 @@ Resources:
       Endpoint: !GetAtt Fastlane2FaSmsLoggerFunction.Arn
       Protocol: lambda
       TopicArn: !Ref SnsTopicArn
+  # The refresh lambda should be accessible cross-account
+  # That way we can force trigger a refresh of the FASTLANE_SESSION from our CI/CD pipeline
+  FastlaneSpaceauthFunctionCrossAccountPermissionDev:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FastlaneSpaceauthFunction
+      Principal: 441276146445 # DEV
+  FastlaneSpaceauthFunctionCrossAccountPermissionQA:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FastlaneSpaceauthFunction
+      Principal: 644562626802 # QA
+  FastlaneSpaceauthFunctionCrossAccountPermissionProd:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FastlaneSpaceauthFunction
+      Principal: 501431420968 # PROD
