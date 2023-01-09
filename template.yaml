@@ -236,3 +236,16 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
       Principal: !Ref ProdAccountId
+  # Managed Policy to attach to the CI/CD Role/User/Group
+  InvokeFastlaneSpaceauthLambdaPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: InvokeFastlaneSpaceauthLambdaPolicy
+      Description: Allows to invoke the FastlaneSpaceauth lambda to force refresh the Fastlane session.
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !GetAtt FastlaneSpaceauthFunction.Arn
