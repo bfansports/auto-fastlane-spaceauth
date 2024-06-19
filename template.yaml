@@ -187,7 +187,7 @@ Resources:
           def lambda_handler(event, context):
               print(event)
       Handler: index.lambda_handler
-      Runtime: python3.9
+      Runtime: python3.12
       Timeout: 3
       MemorySize: 128 # Smallest possible
       Architectures:
