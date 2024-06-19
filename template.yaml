@@ -89,7 +89,7 @@ Resources:
       Description: This function runs Fastlane's spaceauth command to refresh the FASTLANE_SESSION in Secrets Manager
       CodeUri: auto-fastlane-spaceauth/
       Handler: app.lambda_handler
-      Runtime: ruby2.7
+      Runtime: ruby3.3
       Timeout: 150
       Architectures:
         - arm64

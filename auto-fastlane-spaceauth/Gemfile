@@ -4,4 +4,4 @@ gem "fastlane"
 gem "aws-sdk-sqs"
 gem "aws-sdk-secretsmanager"
 
-ruby '~> 2.7.0'
+ruby '~> 3.3.0'
