@@ -57,6 +57,7 @@ Resources:
       ReceiveMessageWaitTimeSeconds: 0
       VisibilityTimeout: 0
       SqsManagedSseEnabled: true
+
   # Policy allows SNS to publish to this SQS queue
   SnsToSqsPolicy:
     Type: AWS::SQS::QueuePolicy
@@ -74,6 +75,7 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Ref SnsTopicArn
       Queues: [!Ref SqsQueueForApple2FaSms]
+
   # Subscribes the SQS queue to the SNS topic
   SnsSubscription:
     Type: AWS::SNS::Subscription
@@ -82,6 +84,71 @@ Resources:
       Endpoint: !GetAtt SqsQueueForApple2FaSms.Arn
       TopicArn: !Ref SnsTopicArn
       RawMessageDelivery: true # Save some bytes
+
+  # Custom IAM Role for Lambda FastlaneSpaceauth
+  FastlaneSpaceauthFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FastlaneSpaceauthFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                # Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FastlaneSpaceauthFunction}:*
+                Resource: "*" # TODO: Fix this
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt SqsQueueForApple2FaSms.Arn
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:PutSecretValue
+                Resource: !Ref SecretsManagerSecretId
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !Ref KmsKeyIdForSecretsManager
+
+
+  # Custom IAM Role for Lambda Fastlane2FaSmsLogger
+  Fastlane2FaSmsLoggerFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Fastlane2FaSmsLoggerFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                # Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Fastlane2FaSmsLoggerFunction}:*
+                Resource: "*" # TODO: Fix this
+
   FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -100,27 +167,7 @@ Resources:
           FASTLANE_USER: !Ref FastlaneUser
           FASTLANE_PASSWORD: !Ref FastlanePassword
           SECRETS_MANAGER_SECRET_ID: !Ref SecretsManagerSecretId
-      Policies:
-      - Statement:
-        - Sid: SqsMessageAccessPolicy
-          Effect: Allow
-          Action:
-            - sqs:ReceiveMessage
-            - sqs:DeleteMessage
-          Resource: !GetAtt SqsQueueForApple2FaSms.Arn
-      - Statement:
-        - Sid: SecretsManagerSecretAccessPolicy
-          Effect: Allow
-          Action:
-            - secretsmanager:GetSecretValue
-            - secretsmanager:PutSecretValue
-          Resource: !Ref SecretsManagerSecretId
-        - Sid: KmsAccessPolicy
-          Effect: Allow
-          Action:
-            - kms:Decrypt
-            - kms:GenerateDataKey
-          Resource: !Ref KmsKeyIdForSecretsManager
+      Role: !GetAtt FastlaneSpaceauthFunctionRole.Arn
       Events:
         SpaceauthSchedule:
           Type: Schedule
@@ -128,12 +175,14 @@ Resources:
             Schedule: rate(15 minutes)
             Name: FastlaneSpaceauthSchedule
             Description: Triggers the FastlaneSpaceauthFunction lambda every 15 minutes
+
   LogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn: FastlaneSpaceauthFunction
     Properties:
       LogGroupName: !Sub /aws/lambda/${FastlaneSpaceauthFunction}
       RetentionInDays: 7
+
   FastlaneSpaceauthRefreshingSessionFilter:
     Type: AWS::Logs::MetricFilter
     DependsOn: LogGroup
@@ -145,6 +194,7 @@ Resources:
         - MetricName: RefreshingSession
           MetricNamespace: FastlaneSpaceauth
           MetricValue: '1'
+
   FastlaneTooManyVerificationCodesSentErrorFilter:
     Type: AWS::Logs::MetricFilter
     DependsOn: LogGroup
@@ -156,6 +206,7 @@ Resources:
         - MetricName: FastlaneTooManyVerificationCodesSentError
           MetricNamespace: FastlaneSpaceauth
           MetricValue: '1'
+
   FastlaneTooManyVerificationCodesSentErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     DependsOn: FastlaneTooManyVerificationCodesSentErrorFilter
@@ -192,6 +243,8 @@ Resources:
       MemorySize: 128 # Smallest possible
       Architectures:
         - arm64
+      Role: !GetAtt Fastlane2FaSmsLoggerFunctionRole.Arn
+
   # Log group that keeps the 2FA SMS history
   LogGroupForFastlane2FaSmsLoggerFunction:
     Type: AWS::Logs::LogGroup
@@ -199,6 +252,7 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${Fastlane2FaSmsLoggerFunction}
       RetentionInDays: 7
+
   # Provide permission for SNS to invoke the logger Lambda function
   SnsPermissionForFastlane2FaSmsLoggerFunction:
     Type: AWS::Lambda::Permission
@@ -206,6 +260,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref Fastlane2FaSmsLoggerFunction
       Principal: sns.amazonaws.com
+
   # SNS Subscription
   SnsSubscriptionForFastlane2FaSmsLoggerFunction:
     Type: AWS::SNS::Subscription
@@ -213,6 +268,7 @@ Resources:
       Endpoint: !GetAtt Fastlane2FaSmsLoggerFunction.Arn
       Protocol: lambda
       TopicArn: !Ref SnsTopicArn
+
   # The refresh lambda should be accessible cross-account
   # That way we can force trigger a refresh of the FASTLANE_SESSION from our CI/CD pipeline
   FastlaneSpaceauthFunctionCrossAccountPermissionDev:
@@ -222,6 +278,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
       Principal: !Ref DevAccountId
+
   FastlaneSpaceauthFunctionCrossAccountPermissionQA:
     Type: AWS::Lambda::Permission
     Condition: IsNotQaAccount # No need to give cross-account permissions to the current account
@@ -229,6 +286,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
       Principal: !Ref QaAccountId
+
   FastlaneSpaceauthFunctionCrossAccountPermissionProd:
     Type: AWS::Lambda::Permission
     Condition: IsNotProdAccount # No need to give cross-account permissions to the current account
@@ -236,6 +294,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref FastlaneSpaceauthFunction
       Principal: !Ref ProdAccountId
+
   # Managed Policy to attach to the CI/CD Role/User/Group
   InvokeFastlaneSpaceauthLambdaPolicy:
     Type: AWS::IAM::ManagedPolicy
