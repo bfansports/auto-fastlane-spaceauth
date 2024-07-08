@@ -106,7 +106,7 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/FastlaneSpaceauthFunction:*
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/FastlaneSpaceauth:*
               - Effect: Allow
                 Action:
                   - sqs:ReceiveMessage
@@ -145,7 +145,7 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/Fastlane2FaSmsLoggerFunction:*
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/Fastlane2FaSmsLogger:*
 
   FastlaneSpaceauthFunction:
     Type: AWS::Serverless::Function
