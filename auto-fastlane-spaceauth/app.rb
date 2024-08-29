@@ -95,6 +95,14 @@ def save_session(fastlane_session = "")
 end
 
 def lambda_handler(event:, context:)
+  # Fix for /tmp being world-writable with the Ruby 3.3 runtime of AWS Lambda
+  # https://stackoverflow.com/a/78886395/22189921
+  # https://github.com/ruby/tmpdir/blob/7751b12e97561ae1aff1f85b047ebae1b7cdc84a/lib/tmpdir.rb#L29
+  temp_dir = "/tmp/auto-fastlane-spaceauth"
+  FileUtils.mkdir_p(temp_dir)
+  File.chmod(1777, temp_dir)
+  ENV['TMPDIR'] = temp_dir
+
   previous_fastlane_session = get_previously_saved_session()
   new_fastlane_session = fastlane_spaceauth(previous_fastlane_session)
   puts # Add a new line to the output for readability
